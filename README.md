@@ -1,8 +1,13 @@
 # Home Assistant Addon For Anylist
-This addon allows you to add, remove, and fetch items from your Anylist list using REST APIs. If you're looking for a Home Assistant integration to manage your Anylist lists via intents, service calls, and the [to-do list feature](https://www.home-assistant.io/integrations/todo), you need to also install the [Anylist custom integration](https://github.com/kevdliu/hacs-anylist).
+This addon allows you to add, remove, and fetch items from your Anylist list using REST APIs, and now also supports recipe management and meal planning. If you're looking for a Home Assistant integration to manage your Anylist lists via intents, service calls, and the [to-do list feature](https://www.home-assistant.io/integrations/todo), you need to also install the [Anylist custom integration](https://github.com/kevdliu/hacs-anylist).
+
+## Features
+- **Shopping Lists**: Add, remove, update, and fetch items from your shopping lists
+- **Recipe Management**: Create, update, delete, and retrieve recipes
+- **Meal Planning**: Add recipes to your meal planning calendar
 
 
-## Installtion Methods
+## Installation Methods
 
 ### Home Assistant Addon
 To install the addon, you have to first add this repository to your Home Assistant addon store. You may do so manually or by clicking the button:
@@ -121,6 +126,53 @@ Response: 200 with JSON payload.
 | Field  | Description      |
 | ------ | ---------------- |
 | lists  | List of lists    |
+
+
+## Recipe Management
+The addon now supports comprehensive recipe management through REST API endpoints. See [RECIPE_API.md](anylist/RECIPE_API.md) for detailed documentation of all recipe endpoints including:
+
+- **GET /recipes** - Retrieve all recipes
+- **GET /recipes/{id}** - Get specific recipe details  
+- **POST /recipes** - Create new recipe
+- **PUT /recipes/{id}** - Update existing recipe
+- **DELETE /recipes/{id}** - Delete recipe
+- **GET /recipe-collections** - Get recipe collections
+- **POST /meal-plan** - Add recipe to meal planning calendar
+
+### Quick Recipe Examples
+
+#### Get all recipes
+```bash
+curl http://localhost:8080/recipes
+```
+
+#### Create a new recipe
+```bash
+curl -X POST http://localhost:8080/recipes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Pasta Carbonara",
+    "ingredients": [
+      {"name": "Pasta", "quantity": "200", "unit": "g"},
+      {"name": "Eggs", "quantity": "2", "unit": ""}
+    ],
+    "preparationSteps": ["Boil pasta", "Mix eggs with cheese", "Combine"],
+    "cookTime": 15,
+    "prepTime": 10,
+    "servings": "2"
+  }'
+```
+
+#### Add recipe to meal plan
+```bash
+curl -X POST http://localhost:8080/meal-plan \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recipeId": "recipe-id",
+    "date": "2024-01-15", 
+    "mealType": "Dinner"
+  }'
+```
 
 
 # Credit
