@@ -6,9 +6,19 @@ const { faker } = require('@faker-js/faker');
 function createRecipe(overrides = {}) {
     const recipe = {
         identifier: faker.string.uuid(),
-        name: faker.commerce.productName(),
+        name: faker.helpers.arrayElement([
+            faker.commerce.productName(),
+            `${faker.food.adjective()} ${faker.food.dish()}`,
+            `${faker.person.firstName()}'s ${faker.food.dish()}`,
+            `${faker.location.country()} Style ${faker.food.dish()}`
+        ]),
         note: faker.lorem.sentence(),
-        sourceName: faker.company.name(),
+        sourceName: faker.helpers.arrayElement([
+            faker.company.name(),
+            `${faker.person.firstName()} ${faker.person.lastName()}`,
+            faker.internet.domainName(),
+            'Family Recipe'
+        ]),
         sourceUrl: faker.internet.url(),
         ingredients: [],
         preparationSteps: [],
@@ -17,7 +27,7 @@ function createRecipe(overrides = {}) {
         prepTime: faker.number.int({ min: 5, max: 60 }),
         servings: faker.number.int({ min: 1, max: 8 }).toString(),
         rating: faker.number.int({ min: 1, max: 5 }),
-        nutritionalInfo: `Calories: ${faker.number.int({ min: 100, max: 800 })}`,
+        nutritionalInfo: `Calories: ${faker.number.int({ min: 100, max: 800 })}, Protein: ${faker.number.int({ min: 5, max: 50 })}g`,
         creationTimestamp: faker.date.past().getTime()
     };
 
@@ -33,10 +43,14 @@ function createRecipe(overrides = {}) {
         recipe.preparationSteps.push(faker.lorem.sentence());
     }
 
-    // Generate 0-3 photo URLs
+    // Generate 0-3 photo URLs using more realistic image URLs
     const photoCount = faker.number.int({ min: 0, max: 3 });
     for (let i = 0; i < photoCount; i++) {
-        recipe.photoUrls.push(faker.image.url());
+        recipe.photoUrls.push(faker.image.urlLoremFlickr({ 
+            category: 'food',
+            width: 640,
+            height: 480
+        }));
     }
 
     return { ...recipe, ...overrides };
@@ -46,11 +60,22 @@ function createRecipe(overrides = {}) {
  * Generate a fake ingredient object using faker
  */
 function createIngredient(overrides = {}) {
-    const units = ['cup', 'cups', 'tbsp', 'tsp', 'oz', 'lb', 'g', 'kg', 'ml', 'l'];
+    const units = ['cup', 'cups', 'tbsp', 'tsp', 'oz', 'lb', 'g', 'kg', 'ml', 'l', 'piece', 'cloves', 'pinch'];
     
     const ingredient = {
-        name: faker.commerce.productMaterial(),
-        quantity: faker.number.int({ min: 1, max: 5 }).toString(),
+        name: faker.helpers.arrayElement([
+            faker.commerce.productMaterial(),
+            faker.food.ingredient(),
+            faker.food.vegetable(),
+            faker.food.meat(),
+            faker.food.spice()
+        ]),
+        quantity: faker.helpers.arrayElement([
+            faker.number.int({ min: 1, max: 5 }).toString(),
+            faker.number.float({ min: 0.25, max: 3, fractionDigits: 2 }).toString(),
+            `${faker.number.int({ min: 1, max: 2 })}-${faker.number.int({ min: 3, max: 4 })}`,
+            'to taste'
+        ]),
         unit: faker.helpers.arrayElement(units)
     };
 
@@ -61,9 +86,16 @@ function createIngredient(overrides = {}) {
  * Generate a fake recipe collection using faker
  */
 function createRecipeCollection(overrides = {}) {
+    const collectionNames = [
+        'Desserts', 'Sweet Treats', 'Baking', 'Pastries',
+        'Main Dishes', 'Entrees', 'Dinner Recipes', 'Hearty Meals',
+        'Appetizers', 'Snacks', 'Breakfast', 'Lunch Ideas',
+        'Quick Meals', 'Slow Cooker', 'Vegetarian', 'Healthy Options'
+    ];
+    
     const collection = {
         identifier: faker.string.uuid(),
-        name: faker.lorem.words(2),
+        name: faker.helpers.arrayElement(collectionNames),
         recipeIds: []
     };
 

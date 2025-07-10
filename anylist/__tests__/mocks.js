@@ -1,3 +1,4 @@
+const { faker } = require('@faker-js/faker');
 const { createRecipes, createRecipeCollections } = require('./fixtures');
 
 /**
@@ -11,10 +12,10 @@ class MockAnyListService {
         this.lists = [];
         this.isLoggedIn = false;
         
-        // Set up some default collections with recipe references
-        this.collections[0].name = 'Desserts';
+        // Set up some default collections with recipe references using faker
+        this.collections[0].name = faker.helpers.arrayElement(['Desserts', 'Sweet Treats', 'Baking', 'Pastries']);
         this.collections[0].recipeIds = [this.recipes[0].identifier];
-        this.collections[1].name = 'Main Dishes';
+        this.collections[1].name = faker.helpers.arrayElement(['Main Dishes', 'Entrees', 'Dinner Recipes', 'Hearty Meals']);
         this.collections[1].recipeIds = [this.recipes[1].identifier];
         
         // Add mock functions to recipes
@@ -30,10 +31,10 @@ class MockAnyListService {
         this.lists = [];
         this.isLoggedIn = false;
         
-        // Reset default collections
-        this.collections[0].name = 'Desserts';
+        // Reset default collections using faker
+        this.collections[0].name = faker.helpers.arrayElement(['Desserts', 'Sweet Treats', 'Baking', 'Pastries']);
         this.collections[0].recipeIds = [this.recipes[0].identifier];
-        this.collections[1].name = 'Main Dishes';
+        this.collections[1].name = faker.helpers.arrayElement(['Main Dishes', 'Entrees', 'Dinner Recipes', 'Hearty Meals']);
         this.collections[1].recipeIds = [this.recipes[1].identifier];
         
         // Add mock functions to recipes

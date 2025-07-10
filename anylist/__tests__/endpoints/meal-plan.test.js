@@ -1,4 +1,5 @@
 const request = require('supertest');
+const { faker } = require('@faker-js/faker');
 const { createMealPlanEvent } = require('../fixtures');
 
 describe('POST /meal-plan', () => {
@@ -18,8 +19,8 @@ describe('POST /meal-plan', () => {
         
         const mealPlanData = {
             recipeId: recipe.id,
-            date: '2023-12-01',
-            mealType: 'dinner'
+            date: faker.date.future().toISOString().split('T')[0], // YYYY-MM-DD format
+            mealType: faker.helpers.arrayElement(['breakfast', 'lunch', 'dinner', 'snack'])
         };
 
         const response = await request(app)
@@ -66,7 +67,7 @@ describe('POST /meal-plan', () => {
         
         const mealPlanData = {
             recipeId: recipe.id,
-            date: '2023-12-01'
+            date: faker.date.future().toISOString().split('T')[0] // YYYY-MM-DD format
         };
 
         const response = await request(app)
@@ -79,8 +80,8 @@ describe('POST /meal-plan', () => {
 
     test('should return 400 for missing recipeId', async () => {
         const invalidData = {
-            date: '2023-12-01',
-            mealType: 'dinner'
+            date: faker.date.future().toISOString().split('T')[0],
+            mealType: faker.helpers.arrayElement(['breakfast', 'lunch', 'dinner', 'snack'])
         };
 
         await request(app)
@@ -98,7 +99,7 @@ describe('POST /meal-plan', () => {
         
         const invalidData = {
             recipeId: recipe.id,
-            mealType: 'dinner'
+            mealType: faker.helpers.arrayElement(['breakfast', 'lunch', 'dinner', 'snack'])
         };
 
         await request(app)

@@ -1,12 +1,13 @@
 const AnyList = require('anylist');
+const { faker } = require('@faker-js/faker');
 const { createMockAnyList, handlers } = require('./mocks');
 
 // Mock the AnyList module
 jest.mock('anylist');
 
-// Set up environment variables for testing
-process.env.EMAIL = 'test@example.com';
-process.env.PASSWORD = 'testpassword';
+// Set up environment variables for testing using faker
+process.env.EMAIL = faker.internet.email();
+process.env.PASSWORD = faker.internet.password();
 // Disable IP filtering for tests
 delete process.env.IP_FILTER;
 

@@ -22,8 +22,15 @@ describe('GET /recipes', () => {
     });
 
     test('should filter recipes by collection', async () => {
+        // First get available collections
+        const collectionsResponse = await request(app)
+            .get('/recipe-collections')
+            .expect(200);
+        
+        const collectionName = collectionsResponse.body.collections[0].name;
+        
         const response = await request(app)
-            .get('/recipes?collection=Desserts')
+            .get(`/recipes?collection=${collectionName}`)
             .expect(200);
 
         expect(response.body.recipes).toHaveLength(1);
@@ -31,8 +38,15 @@ describe('GET /recipes', () => {
     });
 
     test('should filter recipes by collection (case-insensitive)', async () => {
+        // First get available collections
+        const collectionsResponse = await request(app)
+            .get('/recipe-collections')
+            .expect(200);
+        
+        const collectionName = collectionsResponse.body.collections[0].name.toLowerCase();
+        
         const response = await request(app)
-            .get('/recipes?collection=desserts')
+            .get(`/recipes?collection=${collectionName}`)
             .expect(200);
 
         expect(response.body.recipes).toHaveLength(1);
@@ -69,7 +83,7 @@ describe('GET /recipes', () => {
 
         // Should still return recipes when collection filtering fails
         const response = await request(app)
-            .get('/recipes?collection=Desserts')
+            .get('/recipes?collection=TestCollection')
             .expect(200);
 
         expect(response.body.recipes).toHaveLength(3); // Returns all recipes as fallback

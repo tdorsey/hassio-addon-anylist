@@ -1,4 +1,5 @@
 const request = require('supertest');
+const { faker } = require('@faker-js/faker');
 const { createRecipe, createIngredient } = require('../fixtures');
 
 describe('POST /recipes', () => {
@@ -10,12 +11,12 @@ describe('POST /recipes', () => {
 
     test('should create new recipe successfully with faker-generated data', async () => {
         const newRecipe = createRecipe({
-            name: 'Test Recipe from Faker',
-            note: 'A recipe created using faker fixtures',
+            name: faker.commerce.productName(),
+            note: faker.lorem.sentence(),
             ingredients: [
-                createIngredient({ name: 'Test Ingredient', quantity: '1', unit: 'cup' })
+                createIngredient({ name: faker.commerce.productMaterial(), quantity: '1', unit: 'cup' })
             ],
-            preparationSteps: ['Test step 1', 'Test step 2']
+            preparationSteps: [faker.lorem.sentence(), faker.lorem.sentence()]
         });
 
         // Remove fields that shouldn't be in the request
@@ -32,7 +33,7 @@ describe('POST /recipes', () => {
 
     test('should create recipe with minimal data', async () => {
         const minimalRecipe = {
-            name: 'Minimal Recipe'
+            name: faker.commerce.productName()
         };
 
         const response = await request(app)
@@ -60,7 +61,7 @@ describe('POST /recipes', () => {
 
     test('should return 400 for missing recipe name', async () => {
         const invalidRecipe = {
-            note: 'Missing name field'
+            note: faker.lorem.sentence()
         };
 
         await request(app)
