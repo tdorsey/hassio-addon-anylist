@@ -270,12 +270,14 @@ async function createRecipe(recipeData) {
             
             // Add ingredients if provided
             if (recipeData.ingredients && Array.isArray(recipeData.ingredients)) {
-                recipe.ingredients = recipeData.ingredients.map(ing => 
-                    any.createItem({
-                        name: ing.name,
-                        quantity: ing.quantity,
-                        unit: ing.unit
-                    })
+                recipe.ingredients = await Promise.all(
+                    recipeData.ingredients.map(ing => 
+                        any.createItem({
+                            name: ing.name,
+                            quantity: ing.quantity,
+                            unit: ing.unit
+                        })
+                    )
                 );
             }
             
