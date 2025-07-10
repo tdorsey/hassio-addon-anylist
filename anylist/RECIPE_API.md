@@ -8,7 +8,7 @@ This document describes the recipe management endpoints added to the AnyList Hom
 Retrieve all recipes from your AnyList account.
 
 **Query Parameters:**
-- `collection` (optional): Filter recipes by collection name
+- `collection` (optional): Filter recipes by collection name (case-insensitive). If the collection doesn't exist, returns an empty array.
 
 **Response:**
 ```json
@@ -39,6 +39,14 @@ Retrieve all recipes from your AnyList account.
   ]
 }
 ```
+
+**Examples:**
+- `GET /recipes` - Get all recipes
+- `GET /recipes?collection=Favorites` - Get only recipes in the "Favorites" collection
+
+**Status Codes:**
+- 200: Success
+- 500: Server error
 
 ### GET /recipes/{id}
 Get details for a specific recipe by ID.
@@ -123,16 +131,24 @@ Delete a recipe.
 - 500: Server error
 
 ### GET /recipe-collections
-Get available recipe collections.
+Get available recipe collections from your AnyList account.
 
 **Response:**
 ```json
 {
-  "collections": []
+  "collections": [
+    {
+      "id": "collection-identifier",
+      "name": "Collection Name",
+      "recipeIds": ["recipe1-id", "recipe2-id"]
+    }
+  ]
 }
 ```
 
-*Note: This endpoint returns an empty array in the current implementation. Full collection support can be added in future updates.*
+**Status Codes:**
+- 200: Collections retrieved successfully
+- 500: Server error
 
 ### POST /meal-plan
 Add a recipe to the meal planning calendar.

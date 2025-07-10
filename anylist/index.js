@@ -183,6 +183,19 @@ async function checkItem(listName, itemName, checked) {
     });
 }
 
+async function getRecipeCollections() {
+    return initialize(async (any) => {
+        const userData = await any._getUserData();
+        const collections = userData.recipeDataResponse?.recipeCollections || [];
+        
+        return collections.map(collection => ({
+            id: collection.identifier,
+            name: collection.name,
+            recipeIds: collection.recipeIds || []
+        }));
+    });
+}
+
 async function getRecipes(collection) {
     return initialize(async (any) => {
         await any.getRecipes();
@@ -190,9 +203,30 @@ async function getRecipes(collection) {
         
         // Filter by collection if specified
         if (collection) {
-            // Note: Collection filtering would need recipe collection mapping
-            // For now, return all recipes if collection is specified
-            // This can be enhanced when recipe collections are fully implemented
+            try {
+                // Get collections within the same initialized context
+                const userData = await any._getUserData();
+                const collections = userData.recipeDataResponse?.recipeCollections || [];
+                
+                const targetCollection = collections.find(c => 
+                    c.name.toLowerCase() === collection.toLowerCase()
+                );
+                
+                if (targetCollection) {
+                    // Filter recipes to only include those in the specified collection
+                    const collectionRecipeIds = targetCollection.recipeIds || [];
+                    recipes = recipes.filter(recipe => 
+                        collectionRecipeIds.includes(recipe.identifier)
+                    );
+                }
+                // If collection not found, return empty array
+                else {
+                    recipes = [];
+                }
+            } catch (error) {
+                console.error('Error filtering by collection:', error);
+                // If collection filtering fails, return all recipes to maintain compatibility
+            }
         }
         
         return recipes.map(recipe => {
@@ -677,10 +711,9 @@ app.get("/recipe-collections", async (req, res) => {
     }
 
     try {
-        // For now, return empty array as recipe collections need more investigation
-        // This can be enhanced when the collection mapping is implemented
+        let collections = await getRecipeCollections();
         let response = {
-            collections: []
+            collections: collections
         };
 
         res.status(200);
