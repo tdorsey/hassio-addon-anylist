@@ -198,10 +198,9 @@ async function getRecipeCollections() {
 
 async function getRecipes(collection) {
     return initialize(async (any) => {
-        await any.getRecipes();
-        let recipes = any.recipes || [];
+        let recipes = [];
         
-        // Filter by collection if specified
+        // If filtering by collection, optimize by getting collection recipes first
         if (collection) {
             try {
                 // Get collections within the same initialized context
@@ -213,22 +212,33 @@ async function getRecipes(collection) {
                 );
                 
                 if (targetCollection) {
-                    // Filter recipes to only include those in the specified collection
-                    const collectionRecipeIds = targetCollection.recipeIds || [];
-                    recipes = recipes.filter(recipe => 
-                        collectionRecipeIds.includes(recipe.identifier)
+                    // Load all recipes once
+                    await any.getRecipes();
+                    
+                    // Create a Set for faster lookups of collection recipe IDs
+                    const collectionRecipeIds = new Set(targetCollection.recipeIds || []);
+                    
+                    // Filter recipes efficiently using the Set
+                    recipes = any.recipes.filter(recipe => 
+                        collectionRecipeIds.has(recipe.identifier)
                     );
-                }
-                // If collection not found, return empty array
-                else {
-                    recipes = [];
+                } else {
+                    // Collection not found, return empty array without loading all recipes
+                    return [];
                 }
             } catch (error) {
                 console.error('Error filtering by collection:', error);
-                // If collection filtering fails, return all recipes to maintain compatibility
+                // If collection filtering fails, fall back to loading all recipes
+                await any.getRecipes();
+                recipes = any.recipes || [];
             }
+        } else {
+            // No collection filter, load all recipes
+            await any.getRecipes();
+            recipes = any.recipes || [];
         }
         
+        // Transform recipes to API format
         return recipes.map(recipe => {
             return {
                 id: recipe.identifier,
@@ -430,6 +440,141 @@ function enforceRequestSource(req, res) {
     return false;
 }
 
+// Input validation helper functions
+function validateRecipeData(recipeData, isPartialUpdate = false) {
+    const errors = [];
+    
+    // Required field validation (only for full updates, not partial)
+    if (!isPartialUpdate && (!recipeData.name || typeof recipeData.name !== 'string' || recipeData.name.trim() === '')) {
+        errors.push('Recipe name is required and must be a non-empty string');
+    } else if (isPartialUpdate && recipeData.name !== undefined && (typeof recipeData.name !== 'string' || recipeData.name.trim() === '')) {
+        errors.push('Recipe name must be a non-empty string');
+    }
+    
+    // Optional field type validation
+    if (recipeData.note !== undefined && typeof recipeData.note !== 'string') {
+        errors.push('Recipe note must be a string');
+    }
+    
+    if (recipeData.sourceName !== undefined && typeof recipeData.sourceName !== 'string') {
+        errors.push('Source name must be a string');
+    }
+    
+    if (recipeData.sourceUrl !== undefined) {
+        if (typeof recipeData.sourceUrl !== 'string') {
+            errors.push('Source URL must be a string');
+        } else if (recipeData.sourceUrl.trim() !== '' && !isValidUrl(recipeData.sourceUrl)) {
+            errors.push('Source URL must be a valid URL format');
+        }
+    }
+    
+    // Numeric field validation
+    if (recipeData.cookTime !== undefined && (!Number.isInteger(recipeData.cookTime) || recipeData.cookTime < 0)) {
+        errors.push('Cook time must be a non-negative integer');
+    }
+    
+    if (recipeData.prepTime !== undefined && (!Number.isInteger(recipeData.prepTime) || recipeData.prepTime < 0)) {
+        errors.push('Prep time must be a non-negative integer');
+    }
+    
+    if (recipeData.rating !== undefined && (!Number.isInteger(recipeData.rating) || recipeData.rating < 1 || recipeData.rating > 5)) {
+        errors.push('Rating must be an integer between 1 and 5');
+    }
+    
+    // Array field validation
+    if (recipeData.ingredients !== undefined) {
+        if (!Array.isArray(recipeData.ingredients)) {
+            errors.push('Ingredients must be an array');
+        } else {
+            recipeData.ingredients.forEach((ingredient, index) => {
+                if (!ingredient.name || typeof ingredient.name !== 'string' || ingredient.name.trim() === '') {
+                    errors.push(`Ingredient ${index + 1}: name is required and must be a non-empty string`);
+                }
+                if (ingredient.quantity !== undefined && typeof ingredient.quantity !== 'string') {
+                    errors.push(`Ingredient ${index + 1}: quantity must be a string`);
+                }
+                if (ingredient.unit !== undefined && typeof ingredient.unit !== 'string') {
+                    errors.push(`Ingredient ${index + 1}: unit must be a string`);
+                }
+            });
+        }
+    }
+    
+    if (recipeData.preparationSteps !== undefined) {
+        if (!Array.isArray(recipeData.preparationSteps)) {
+            errors.push('Preparation steps must be an array');
+        } else {
+            recipeData.preparationSteps.forEach((step, index) => {
+                if (typeof step !== 'string' || step.trim() === '') {
+                    errors.push(`Preparation step ${index + 1}: must be a non-empty string`);
+                }
+            });
+        }
+    }
+    
+    if (recipeData.photoUrls !== undefined) {
+        if (!Array.isArray(recipeData.photoUrls)) {
+            errors.push('Photo URLs must be an array');
+        } else {
+            recipeData.photoUrls.forEach((url, index) => {
+                if (typeof url !== 'string' || !isValidUrl(url)) {
+                    errors.push(`Photo URL ${index + 1}: must be a valid URL format`);
+                }
+            });
+        }
+    }
+    
+    return errors;
+}
+
+function validateMealPlanData(data) {
+    const errors = [];
+    
+    if (!data.recipeId || typeof data.recipeId !== 'string' || data.recipeId.trim() === '') {
+        errors.push('Recipe ID is required and must be a non-empty string');
+    }
+    
+    if (!data.date || typeof data.date !== 'string') {
+        errors.push('Date is required and must be a string');
+    } else if (!isValidDate(data.date)) {
+        errors.push('Date must be a valid date format (YYYY-MM-DD or ISO string)');
+    }
+    
+    if (data.mealType !== undefined) {
+        if (typeof data.mealType !== 'string') {
+            errors.push('Meal type must be a string');
+        } else {
+            const validMealTypes = ['breakfast', 'lunch', 'dinner', 'snack', 'meal'];
+            if (!validMealTypes.includes(data.mealType.toLowerCase())) {
+                errors.push(`Meal type must be one of: ${validMealTypes.join(', ')}`);
+            }
+        }
+    }
+    
+    return errors;
+}
+
+function validateCollectionParameter(collection) {
+    if (collection !== undefined && (typeof collection !== 'string' || collection.trim() === '')) {
+        return ['Collection parameter must be a non-empty string'];
+    }
+    return [];
+}
+
+function isValidUrl(string) {
+    try {
+        new URL(string);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+function isValidDate(dateString) {
+    const date = new Date(dateString);
+    return date instanceof Date && !isNaN(date) && dateString.match(/^\d{4}-\d{2}-\d{2}$|^\d{4}-\d{2}-\d{2}T/);
+}
+
 const app = express();
 app.use(express.json());
 
@@ -574,6 +719,16 @@ app.get("/recipes", async (req, res) => {
 
     try {
         let collection = req.query.collection;
+        
+        // Validate collection parameter
+        const collectionErrors = validateCollectionParameter(collection);
+        if (collectionErrors.length > 0) {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ errors: collectionErrors }));
+            return;
+        }
+        
         let recipes = await getRecipes(collection);
         
         let response = {
@@ -596,8 +751,10 @@ app.get("/recipes/:id", async (req, res) => {
 
     try {
         let recipeId = req.params.id;
-        if (!recipeId) {
-            res.sendStatus(400);
+        if (!recipeId || typeof recipeId !== 'string' || recipeId.trim() === '') {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ error: 'Recipe ID is required and must be a non-empty string' }));
             return;
         }
 
@@ -623,8 +780,13 @@ app.post("/recipes", async (req, res) => {
 
     try {
         let recipeData = req.body;
-        if (!recipeData.name) {
-            res.sendStatus(400);
+        
+        // Validate recipe data
+        const validationErrors = validateRecipeData(recipeData);
+        if (validationErrors.length > 0) {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ errors: validationErrors }));
             return;
         }
 
@@ -651,12 +813,24 @@ app.put("/recipes/:id", async (req, res) => {
 
     try {
         let recipeId = req.params.id;
-        if (!recipeId) {
-            res.sendStatus(400);
+        if (!recipeId || typeof recipeId !== 'string' || recipeId.trim() === '') {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ error: 'Recipe ID is required and must be a non-empty string' }));
             return;
         }
 
         let updates = req.body;
+        
+        // Validate update data (allow partial updates, so only validate provided fields)
+        const validationErrors = validateRecipeData(updates, true);
+        if (validationErrors.length > 0) {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ errors: validationErrors }));
+            return;
+        }
+        
         let result = await updateRecipe(recipeId, updates);
         
         if (result.success) {
@@ -683,8 +857,10 @@ app.delete("/recipes/:id", async (req, res) => {
 
     try {
         let recipeId = req.params.id;
-        if (!recipeId) {
-            res.sendStatus(400);
+        if (!recipeId || typeof recipeId !== 'string' || recipeId.trim() === '') {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ error: 'Recipe ID is required and must be a non-empty string' }));
             return;
         }
 
@@ -731,13 +907,18 @@ app.post("/meal-plan", async (req, res) => {
     }
 
     try {
-        let { recipeId, date, mealType } = req.body;
+        let mealPlanData = req.body;
         
-        if (!recipeId || !date) {
-            res.sendStatus(400);
+        // Validate meal plan data
+        const validationErrors = validateMealPlanData(mealPlanData);
+        if (validationErrors.length > 0) {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ errors: validationErrors }));
             return;
         }
-
+        
+        let { recipeId, date, mealType } = mealPlanData;
         let result = await addToMealPlan(recipeId, date, mealType);
         
         if (result.success) {

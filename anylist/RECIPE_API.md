@@ -10,6 +10,9 @@ Retrieve all recipes from your AnyList account.
 **Query Parameters:**
 - `collection` (optional): Filter recipes by collection name (case-insensitive). If the collection doesn't exist, returns an empty array.
 
+**Validation:**
+- Collection parameter must be a non-empty string if provided
+
 **Response:**
 ```json
 {
@@ -46,18 +49,23 @@ Retrieve all recipes from your AnyList account.
 
 **Status Codes:**
 - 200: Success
+- 400: Invalid collection parameter
 - 500: Server error
 
 ### GET /recipes/{id}
 Get details for a specific recipe by ID.
 
 **Parameters:**
-- `id`: Recipe identifier
+- `id`: Recipe identifier (required, non-empty string)
+
+**Validation:**
+- Recipe ID must be a non-empty string
 
 **Response:** Single recipe object (same structure as above)
 
 **Status Codes:**
 - 200: Success
+- 400: Invalid recipe ID
 - 404: Recipe not found
 - 500: Server error
 
@@ -86,6 +94,20 @@ Create a new recipe.
 }
 ```
 
+**Validation Rules:**
+- `name` (required): Non-empty string
+- `note` (optional): String
+- `sourceName` (optional): String
+- `sourceUrl` (optional): Valid URL format or empty string
+- `cookTime` (optional): Non-negative integer
+- `prepTime` (optional): Non-negative integer
+- `rating` (optional): Integer between 1 and 5
+- `ingredients` (optional): Array of ingredient objects
+  - Each ingredient requires `name` as non-empty string
+  - `quantity` and `unit` must be strings if provided
+- `preparationSteps` (optional): Array of non-empty strings
+- `photoUrls` (optional): Array of valid URLs
+
 **Response:**
 ```json
 {
@@ -93,18 +115,30 @@ Create a new recipe.
 }
 ```
 
+**Error Response:**
+```json
+{
+  "errors": [
+    "Recipe name is required and must be a non-empty string",
+    "Rating must be an integer between 1 and 5"
+  ]
+}
+```
+
 **Status Codes:**
 - 201: Recipe created
-- 400: Invalid request data
+- 400: Invalid request data (with detailed error messages)
 - 500: Server error
 
 ### PUT /recipes/{id}
 Update an existing recipe.
 
 **Parameters:**
-- `id`: Recipe identifier
+- `id`: Recipe identifier (required, non-empty string)
 
-**Request Body:** Same as POST (all fields optional for update)
+**Request Body:** Same structure as POST (all fields optional for partial updates)
+
+**Validation Rules:** Same as POST, but all fields are optional for partial updates
 
 **Response:**
 ```json
@@ -113,20 +147,34 @@ Update an existing recipe.
 }
 ```
 
+**Error Response:**
+```json
+{
+  "errors": [
+    "Recipe name must be a non-empty string",
+    "Cook time must be a non-negative integer"
+  ]
+}
+```
+
 **Status Codes:**
 - 200: Recipe updated
+- 400: Invalid request data (invalid ID or validation errors)
 - 404: Recipe not found
-- 400: Invalid request data
 - 500: Server error
 
 ### DELETE /recipes/{id}
 Delete a recipe.
 
 **Parameters:**
-- `id`: Recipe identifier
+- `id`: Recipe identifier (required, non-empty string)
+
+**Validation:**
+- Recipe ID must be a non-empty string
 
 **Status Codes:**
 - 200: Recipe deleted
+- 400: Invalid recipe ID
 - 404: Recipe not found
 - 500: Server error
 
@@ -162,6 +210,11 @@ Add a recipe to the meal planning calendar.
 }
 ```
 
+**Validation Rules:**
+- `recipeId` (required): Non-empty string
+- `date` (required): Valid date format (YYYY-MM-DD or ISO string)
+- `mealType` (optional): One of "breakfast", "lunch", "dinner", "snack", "meal"
+
 **Response:**
 ```json
 {
@@ -169,10 +222,37 @@ Add a recipe to the meal planning calendar.
 }
 ```
 
+**Error Response:**
+```json
+{
+  "errors": [
+    "Recipe ID is required and must be a non-empty string",
+    "Date must be a valid date format (YYYY-MM-DD or ISO string)"
+  ]
+}
+```
+
 **Status Codes:**
 - 201: Meal plan event created
-- 400: Invalid request data
+- 400: Invalid request data (with detailed error messages)
 - 500: Server error
+
+## Performance Optimizations
+
+### Collection Filtering Optimization
+The recipe collection filtering has been optimized for large recipe sets:
+
+- **Efficient Filtering**: When filtering by collection, the system first retrieves collection metadata to identify target recipe IDs, then filters the recipe list using a Set for O(1) lookups instead of O(n) searches.
+- **Early Exit**: If a collection doesn't exist, the system returns an empty array without loading all recipes, saving API calls and processing time.
+- **Set-based Lookups**: Collection recipe ID filtering uses Set data structure for faster membership testing.
+
+### Input Validation Benefits
+Comprehensive input validation provides:
+
+- **Early Error Detection**: Invalid data is caught before API calls to AnyList
+- **Detailed Error Messages**: Multiple validation errors are returned in a single response
+- **Type Safety**: All data types are validated before processing
+- **URL Validation**: Source URLs and photo URLs are validated for proper format
 
 ## Authentication and Security
 
