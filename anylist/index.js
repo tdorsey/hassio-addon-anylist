@@ -314,13 +314,22 @@ async function updateRecipe(recipeId, updates) {
             
             // Update ingredients if provided
             if ('ingredients' in updates && Array.isArray(updates.ingredients)) {
-                recipe.ingredients = updates.ingredients.map(ing => 
-                    any.createItem({
-                        name: ing.name,
-                        quantity: ing.quantity,
-                        unit: ing.unit
-                    })
+                // Clear old ingredients
+                recipe.ingredients = [];
+                
+                // Create and await new ingredients
+                const newIngredients = await Promise.all(
+                    updates.ingredients.map(ing => 
+                        any.createItem({
+                            name: ing.name,
+                            quantity: ing.quantity,
+                            unit: ing.unit
+                        })
+                    )
                 );
+                
+                // Assign resolved ingredients
+                recipe.ingredients = newIngredients;
             }
             
             await recipe.save();
