@@ -7,7 +7,7 @@ This addon allows you to add, remove, and fetch items from your Anylist list usi
 - **Meal Planning**: Add recipes to your meal planning calendar
 
 
-## Installtion Methods
+## Installation Methods
 
 ### Home Assistant Addon
 To install the addon, you have to first add this repository to your Home Assistant addon store. You may do so manually or by clicking the button:
