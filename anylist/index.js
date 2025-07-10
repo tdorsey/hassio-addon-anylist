@@ -183,6 +183,190 @@ async function checkItem(listName, itemName, checked) {
     });
 }
 
+async function getRecipes(collection) {
+    return initialize(async (any) => {
+        await any.getRecipes();
+        let recipes = any.recipes || [];
+        
+        // Filter by collection if specified
+        if (collection) {
+            // Note: Collection filtering would need recipe collection mapping
+            // For now, return all recipes if collection is specified
+            // This can be enhanced when recipe collections are fully implemented
+        }
+        
+        return recipes.map(recipe => {
+            return {
+                id: recipe.identifier,
+                name: recipe.name,
+                note: recipe.note,
+                sourceName: recipe.sourceName,
+                sourceUrl: recipe.sourceUrl,
+                ingredients: recipe.ingredients.map(ing => ({
+                    name: ing.name,
+                    quantity: ing.quantity,
+                    unit: ing.unit
+                })),
+                preparationSteps: recipe.preparationSteps || [],
+                photoUrls: recipe.photoUrls || [],
+                cookTime: recipe.cookTime,
+                prepTime: recipe.prepTime,
+                servings: recipe.servings,
+                rating: recipe.rating,
+                nutritionalInfo: recipe.nutritionalInfo,
+                creationTimestamp: recipe.creationTimestamp
+            };
+        });
+    });
+}
+
+async function getRecipeById(recipeId) {
+    return initialize(async (any) => {
+        await any.getRecipes();
+        let recipe = any.recipes.find(r => r.identifier === recipeId);
+        
+        if (!recipe) {
+            return null;
+        }
+        
+        return {
+            id: recipe.identifier,
+            name: recipe.name,
+            note: recipe.note,
+            sourceName: recipe.sourceName,
+            sourceUrl: recipe.sourceUrl,
+            ingredients: recipe.ingredients.map(ing => ({
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit
+            })),
+            preparationSteps: recipe.preparationSteps || [],
+            photoUrls: recipe.photoUrls || [],
+            cookTime: recipe.cookTime,
+            prepTime: recipe.prepTime,
+            servings: recipe.servings,
+            rating: recipe.rating,
+            nutritionalInfo: recipe.nutritionalInfo,
+            creationTimestamp: recipe.creationTimestamp
+        };
+    });
+}
+
+async function createRecipe(recipeData) {
+    return initialize(async (any) => {
+        try {
+            let recipe = await any.createRecipe({
+                name: recipeData.name,
+                note: recipeData.note,
+                sourceName: recipeData.sourceName,
+                sourceUrl: recipeData.sourceUrl,
+                preparationSteps: recipeData.preparationSteps || [],
+                cookTime: recipeData.cookTime,
+                prepTime: recipeData.prepTime,
+                servings: recipeData.servings,
+                rating: recipeData.rating,
+                nutritionalInfo: recipeData.nutritionalInfo
+            });
+            
+            // Add ingredients if provided
+            if (recipeData.ingredients && Array.isArray(recipeData.ingredients)) {
+                recipe.ingredients = recipeData.ingredients.map(ing => 
+                    any.createItem({
+                        name: ing.name,
+                        quantity: ing.quantity,
+                        unit: ing.unit
+                    })
+                );
+            }
+            
+            await recipe.save();
+            return { success: true, id: recipe.identifier };
+        } catch (error) {
+            console.error('Error creating recipe:', error);
+            return { success: false, error: error.message };
+        }
+    });
+}
+
+async function updateRecipe(recipeId, updates) {
+    return initialize(async (any) => {
+        try {
+            await any.getRecipes();
+            let recipe = any.recipes.find(r => r.identifier === recipeId);
+            
+            if (!recipe) {
+                return { success: false, error: 'Recipe not found' };
+            }
+            
+            // Update recipe properties
+            if ('name' in updates) recipe.name = updates.name;
+            if ('note' in updates) recipe.note = updates.note;
+            if ('sourceName' in updates) recipe.sourceName = updates.sourceName;
+            if ('sourceUrl' in updates) recipe.sourceUrl = updates.sourceUrl;
+            if ('preparationSteps' in updates) recipe.preparationSteps = updates.preparationSteps;
+            if ('cookTime' in updates) recipe.cookTime = updates.cookTime;
+            if ('prepTime' in updates) recipe.prepTime = updates.prepTime;
+            if ('servings' in updates) recipe.servings = updates.servings;
+            if ('rating' in updates) recipe.rating = updates.rating;
+            if ('nutritionalInfo' in updates) recipe.nutritionalInfo = updates.nutritionalInfo;
+            
+            // Update ingredients if provided
+            if ('ingredients' in updates && Array.isArray(updates.ingredients)) {
+                recipe.ingredients = updates.ingredients.map(ing => 
+                    any.createItem({
+                        name: ing.name,
+                        quantity: ing.quantity,
+                        unit: ing.unit
+                    })
+                );
+            }
+            
+            await recipe.save();
+            return { success: true, id: recipe.identifier };
+        } catch (error) {
+            console.error('Error updating recipe:', error);
+            return { success: false, error: error.message };
+        }
+    });
+}
+
+async function deleteRecipe(recipeId) {
+    return initialize(async (any) => {
+        try {
+            await any.getRecipes();
+            let recipe = any.recipes.find(r => r.identifier === recipeId);
+            
+            if (!recipe) {
+                return { success: false, error: 'Recipe not found' };
+            }
+            
+            await recipe.delete();
+            return { success: true };
+        } catch (error) {
+            console.error('Error deleting recipe:', error);
+            return { success: false, error: error.message };
+        }
+    });
+}
+
+async function addToMealPlan(recipeId, date, mealType) {
+    return initialize(async (any) => {
+        try {
+            let event = await any.createEvent({
+                recipeId: recipeId,
+                date: new Date(date),
+                title: mealType || 'Meal'
+            });
+            
+            await event.save();
+            return { success: true, eventId: event.identifier };
+        } catch (error) {
+            console.error('Error adding to meal plan:', error);
+            return { success: false, error: error.message };
+        }
+    });
+}
+
 function getListName(list) {
     return list || DEFAULT_LIST;
 }
@@ -334,6 +518,197 @@ app.post("/check", async (req, res) => {
 
     let code = await checkItem(listName, itemName, checked);
     res.sendStatus(code);
+});
+
+// Recipe endpoints
+
+app.get("/recipes", async (req, res) => {
+    if (!enforceRequestSource(req, res)) {
+        return;
+    }
+
+    try {
+        let collection = req.query.collection;
+        let recipes = await getRecipes(collection);
+        
+        let response = {
+            recipes: recipes
+        };
+
+        res.status(200);
+        res.header("Content-Type", "application/json");
+        res.send(JSON.stringify(response));
+    } catch (error) {
+        console.error('Error fetching recipes:', error);
+        res.sendStatus(500);
+    }
+});
+
+app.get("/recipes/:id", async (req, res) => {
+    if (!enforceRequestSource(req, res)) {
+        return;
+    }
+
+    try {
+        let recipeId = req.params.id;
+        if (!recipeId) {
+            res.sendStatus(400);
+            return;
+        }
+
+        let recipe = await getRecipeById(recipeId);
+        if (!recipe) {
+            res.sendStatus(404);
+            return;
+        }
+
+        res.status(200);
+        res.header("Content-Type", "application/json");
+        res.send(JSON.stringify(recipe));
+    } catch (error) {
+        console.error('Error fetching recipe:', error);
+        res.sendStatus(500);
+    }
+});
+
+app.post("/recipes", async (req, res) => {
+    if (!enforceRequestSource(req, res)) {
+        return;
+    }
+
+    try {
+        let recipeData = req.body;
+        if (!recipeData.name) {
+            res.sendStatus(400);
+            return;
+        }
+
+        let result = await createRecipe(recipeData);
+        if (result.success) {
+            res.status(201);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ id: result.id }));
+        } else {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ error: result.error }));
+        }
+    } catch (error) {
+        console.error('Error creating recipe:', error);
+        res.sendStatus(500);
+    }
+});
+
+app.put("/recipes/:id", async (req, res) => {
+    if (!enforceRequestSource(req, res)) {
+        return;
+    }
+
+    try {
+        let recipeId = req.params.id;
+        if (!recipeId) {
+            res.sendStatus(400);
+            return;
+        }
+
+        let updates = req.body;
+        let result = await updateRecipe(recipeId, updates);
+        
+        if (result.success) {
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ id: result.id }));
+        } else if (result.error === 'Recipe not found') {
+            res.sendStatus(404);
+        } else {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ error: result.error }));
+        }
+    } catch (error) {
+        console.error('Error updating recipe:', error);
+        res.sendStatus(500);
+    }
+});
+
+app.delete("/recipes/:id", async (req, res) => {
+    if (!enforceRequestSource(req, res)) {
+        return;
+    }
+
+    try {
+        let recipeId = req.params.id;
+        if (!recipeId) {
+            res.sendStatus(400);
+            return;
+        }
+
+        let result = await deleteRecipe(recipeId);
+        
+        if (result.success) {
+            res.sendStatus(200);
+        } else if (result.error === 'Recipe not found') {
+            res.sendStatus(404);
+        } else {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ error: result.error }));
+        }
+    } catch (error) {
+        console.error('Error deleting recipe:', error);
+        res.sendStatus(500);
+    }
+});
+
+app.get("/recipe-collections", async (req, res) => {
+    if (!enforceRequestSource(req, res)) {
+        return;
+    }
+
+    try {
+        // For now, return empty array as recipe collections need more investigation
+        // This can be enhanced when the collection mapping is implemented
+        let response = {
+            collections: []
+        };
+
+        res.status(200);
+        res.header("Content-Type", "application/json");
+        res.send(JSON.stringify(response));
+    } catch (error) {
+        console.error('Error fetching recipe collections:', error);
+        res.sendStatus(500);
+    }
+});
+
+app.post("/meal-plan", async (req, res) => {
+    if (!enforceRequestSource(req, res)) {
+        return;
+    }
+
+    try {
+        let { recipeId, date, mealType } = req.body;
+        
+        if (!recipeId || !date) {
+            res.sendStatus(400);
+            return;
+        }
+
+        let result = await addToMealPlan(recipeId, date, mealType);
+        
+        if (result.success) {
+            res.status(201);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ eventId: result.eventId }));
+        } else {
+            res.status(400);
+            res.header("Content-Type", "application/json");
+            res.send(JSON.stringify({ error: result.error }));
+        }
+    } catch (error) {
+        console.error('Error adding to meal plan:', error);
+        res.sendStatus(500);
+    }
 });
 
 function start() {
