@@ -19,7 +19,7 @@ describe('POST /meal-plan', () => {
         
         const mealPlanData = {
             recipeId: recipe.id,
-            date: faker.date.future().toISOString().split('T')[0], // YYYY-MM-DD format
+            date: faker.date.future().toLocaleDateString('en-CA'), // YYYY-MM-DD format
             mealType: faker.helpers.arrayElement(['breakfast', 'lunch', 'dinner', 'snack'])
         };
 
@@ -67,7 +67,7 @@ describe('POST /meal-plan', () => {
         
         const mealPlanData = {
             recipeId: recipe.id,
-            date: faker.date.future().toISOString().split('T')[0] // YYYY-MM-DD format
+            date: faker.date.future().toLocaleDateString('en-CA') // YYYY-MM-DD format
         };
 
         const response = await request(app)
@@ -80,7 +80,7 @@ describe('POST /meal-plan', () => {
 
     test('should return 400 for missing recipeId', async () => {
         const invalidData = {
-            date: faker.date.future().toISOString().split('T')[0],
+            date: faker.date.future().toLocaleDateString('en-CA'),
             mealType: faker.helpers.arrayElement(['breakfast', 'lunch', 'dinner', 'snack'])
         };
 

@@ -117,7 +117,7 @@ function createMealPlanEvent(overrides = {}) {
     const event = {
         identifier: faker.string.uuid(),
         recipeId: faker.string.uuid(),
-        date: faker.date.future().toISOString().split('T')[0], // Return as YYYY-MM-DD string
+        date: faker.date.future().toLocaleDateString('en-CA'), // Return as YYYY-MM-DD string
         title: faker.helpers.arrayElement(mealTypes)
     };
 
