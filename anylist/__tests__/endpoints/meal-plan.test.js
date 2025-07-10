@@ -78,7 +78,7 @@ describe('POST /meal-plan', () => {
         expect(response.body).toHaveProperty('eventId');
     });
 
-    test('should return 400 for missing recipeId', async () => {
+    test('should return 422 for missing recipeId', async () => {
         const invalidData = {
             date: faker.date.future().toLocaleDateString('en-CA'),
             mealType: faker.helpers.arrayElement(['breakfast', 'lunch', 'dinner', 'snack'])
@@ -87,10 +87,10 @@ describe('POST /meal-plan', () => {
         await request(app)
             .post('/meal-plan')
             .send(invalidData)
-            .expect(400);
+            .expect(422);
     });
 
-    test('should return 400 for missing date', async () => {
+    test('should return 422 for missing date', async () => {
         const recipesResponse = await request(app)
             .get('/recipes')
             .expect(200);
@@ -105,7 +105,7 @@ describe('POST /meal-plan', () => {
         await request(app)
             .post('/meal-plan')
             .send(invalidData)
-            .expect(400);
+            .expect(422);
     });
 
     test('should handle meal planning creation errors', async () => {

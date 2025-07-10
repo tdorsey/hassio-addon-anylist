@@ -45,7 +45,7 @@ describe('Input Validation Tests', () => {
             const response = await request(app)
                 .post('/recipes')
                 .send(invalidRecipe)
-                .expect(400);
+                .expect(422);
                 
             expect(response.body).toHaveProperty('errors');
             expect(response.body.errors).toEqual(
@@ -73,7 +73,7 @@ describe('Input Validation Tests', () => {
             const response = await request(app)
                 .post('/recipes')
                 .send(invalidRecipe)
-                .expect(400);
+                .expect(422);
                 
             expect(response.body.errors).toEqual(
                 expect.arrayContaining([
@@ -157,7 +157,7 @@ describe('Input Validation Tests', () => {
             const response = await request(app)
                 .put('/recipes/recipe-1')
                 .send(invalidUpdate)
-                .expect(400);
+                .expect(422);
                 
             expect(response.body.errors).toEqual(
                 expect.arrayContaining([
@@ -175,7 +175,7 @@ describe('Input Validation Tests', () => {
             const response = await request(app)
                 .post('/meal-plan')
                 .send({})
-                .expect(400);
+                .expect(422);
                 
             expect(response.body.errors).toEqual(
                 expect.arrayContaining([
@@ -195,7 +195,7 @@ describe('Input Validation Tests', () => {
             const response = await request(app)
                 .post('/meal-plan')
                 .send(invalidMealPlan)
-                .expect(400);
+                .expect(422);
                 
             expect(response.body.errors).toEqual(
                 expect.arrayContaining([
@@ -226,7 +226,7 @@ describe('Input Validation Tests', () => {
         test('should reject empty collection parameter', async () => {
             const response = await request(app)
                 .get('/recipes?collection=')
-                .expect(400);
+                .expect(422);
                 
             expect(response.body.errors).toEqual(
                 expect.arrayContaining([

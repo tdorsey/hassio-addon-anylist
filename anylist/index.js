@@ -570,6 +570,55 @@ function isValidUrl(string) {
     }
 }
 
+function isRateLimitError(error) {
+    // Check if the error indicates rate limiting from the AnyList API
+    if (!error) return false;
+    
+    const errorMessage = error.message || error.toString();
+    const statusCode = error.status || error.statusCode;
+    
+    // Check for explicit 429 status code
+    if (statusCode === 429) return true;
+    
+    // Check for rate limiting keywords in error messages
+    const rateLimitKeywords = [
+        'rate limit',
+        'too many requests',
+        'throttle',
+        'rate exceeded',
+        'request limit'
+    ];
+    
+    return rateLimitKeywords.some(keyword => 
+        errorMessage.toLowerCase().includes(keyword)
+    );
+}
+
+function handleApiError(error, res, defaultMessage = 'Internal server error') {
+    // Handle rate limiting
+    if (isRateLimitError(error)) {
+        res.status(429);
+        res.header("Content-Type", "application/json");
+        res.send(JSON.stringify({ 
+            error: 'Rate limit exceeded. Please try again later.',
+            retryAfter: 60 // Suggest retry after 60 seconds
+        }));
+        return true;
+    }
+    
+    // Handle other specific error types
+    const statusCode = error.status || error.statusCode;
+    if (statusCode && statusCode >= 400 && statusCode < 500) {
+        res.status(statusCode);
+        res.header("Content-Type", "application/json");
+        res.send(JSON.stringify({ error: error.message || defaultMessage }));
+        return true;
+    }
+    
+    // Default to 500 for unhandled errors
+    return false;
+}
+
 function isValidDate(dateString) {
     const date = new Date(dateString);
     return date instanceof Date && !isNaN(date) && dateString.match(/^\d{4}-\d{2}-\d{2}$|^\d{4}-\d{2}-\d{2}T/);
@@ -723,7 +772,7 @@ app.get("/recipes", async (req, res) => {
         // Validate collection parameter
         const collectionErrors = validateCollectionParameter(collection);
         if (collectionErrors.length > 0) {
-            res.status(400);
+            res.status(422);
             res.header("Content-Type", "application/json");
             res.send(JSON.stringify({ errors: collectionErrors }));
             return;
@@ -740,7 +789,9 @@ app.get("/recipes", async (req, res) => {
         res.send(JSON.stringify(response));
     } catch (error) {
         console.error('Error fetching recipes:', error);
-        res.sendStatus(500);
+        if (!handleApiError(error, res)) {
+            res.sendStatus(500);
+        }
     }
 });
 
@@ -769,7 +820,9 @@ app.get("/recipes/:id", async (req, res) => {
         res.send(JSON.stringify(recipe));
     } catch (error) {
         console.error('Error fetching recipe:', error);
-        res.sendStatus(500);
+        if (!handleApiError(error, res)) {
+            res.sendStatus(500);
+        }
     }
 });
 
@@ -784,7 +837,7 @@ app.post("/recipes", async (req, res) => {
         // Validate recipe data
         const validationErrors = validateRecipeData(recipeData);
         if (validationErrors.length > 0) {
-            res.status(400);
+            res.status(422);
             res.header("Content-Type", "application/json");
             res.send(JSON.stringify({ errors: validationErrors }));
             return;
@@ -802,7 +855,9 @@ app.post("/recipes", async (req, res) => {
         }
     } catch (error) {
         console.error('Error creating recipe:', error);
-        res.sendStatus(500);
+        if (!handleApiError(error, res)) {
+            res.sendStatus(500);
+        }
     }
 });
 
@@ -825,7 +880,7 @@ app.put("/recipes/:id", async (req, res) => {
         // Validate update data (allow partial updates, so only validate provided fields)
         const validationErrors = validateRecipeData(updates, true);
         if (validationErrors.length > 0) {
-            res.status(400);
+            res.status(422);
             res.header("Content-Type", "application/json");
             res.send(JSON.stringify({ errors: validationErrors }));
             return;
@@ -846,7 +901,9 @@ app.put("/recipes/:id", async (req, res) => {
         }
     } catch (error) {
         console.error('Error updating recipe:', error);
-        res.sendStatus(500);
+        if (!handleApiError(error, res)) {
+            res.sendStatus(500);
+        }
     }
 });
 
@@ -877,7 +934,9 @@ app.delete("/recipes/:id", async (req, res) => {
         }
     } catch (error) {
         console.error('Error deleting recipe:', error);
-        res.sendStatus(500);
+        if (!handleApiError(error, res)) {
+            res.sendStatus(500);
+        }
     }
 });
 
@@ -897,7 +956,9 @@ app.get("/recipe-collections", async (req, res) => {
         res.send(JSON.stringify(response));
     } catch (error) {
         console.error('Error fetching recipe collections:', error);
-        res.sendStatus(500);
+        if (!handleApiError(error, res)) {
+            res.sendStatus(500);
+        }
     }
 });
 
@@ -912,7 +973,7 @@ app.post("/meal-plan", async (req, res) => {
         // Validate meal plan data
         const validationErrors = validateMealPlanData(mealPlanData);
         if (validationErrors.length > 0) {
-            res.status(400);
+            res.status(422);
             res.header("Content-Type", "application/json");
             res.send(JSON.stringify({ errors: validationErrors }));
             return;
@@ -932,7 +993,9 @@ app.post("/meal-plan", async (req, res) => {
         }
     } catch (error) {
         console.error('Error adding to meal plan:', error);
-        res.sendStatus(500);
+        if (!handleApiError(error, res)) {
+            res.sendStatus(500);
+        }
     }
 });
 

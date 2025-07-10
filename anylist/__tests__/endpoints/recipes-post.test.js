@@ -59,7 +59,7 @@ describe('POST /recipes', () => {
         expect(response.body.id).toMatch(/^recipe-\d+$/);
     });
 
-    test('should return 400 for missing recipe name', async () => {
+    test('should return 422 for missing recipe name', async () => {
         const invalidRecipe = {
             note: faker.lorem.sentence()
         };
@@ -67,7 +67,7 @@ describe('POST /recipes', () => {
         await request(app)
             .post('/recipes')
             .send(invalidRecipe)
-            .expect(400);
+            .expect(422);
     });
 
     test('should handle creation errors gracefully', async () => {

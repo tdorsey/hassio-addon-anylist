@@ -49,7 +49,8 @@ Retrieve all recipes from your AnyList account.
 
 **Status Codes:**
 - 200: Success
-- 400: Invalid collection parameter
+- 422: Invalid collection parameter (semantic validation error)
+- 429: Rate limit exceeded (too many requests)
 - 500: Server error
 
 ### GET /recipes/{id}
@@ -65,8 +66,9 @@ Get details for a specific recipe by ID.
 
 **Status Codes:**
 - 200: Success
-- 400: Invalid recipe ID
+- 400: Invalid recipe ID (malformed request)
 - 404: Recipe not found
+- 429: Rate limit exceeded (too many requests)
 - 500: Server error
 
 ### POST /recipes
@@ -127,7 +129,8 @@ Create a new recipe.
 
 **Status Codes:**
 - 201: Recipe created
-- 400: Invalid request data (with detailed error messages)
+- 422: Invalid request data (validation errors with detailed error messages)
+- 429: Rate limit exceeded (too many requests)
 - 500: Server error
 
 ### PUT /recipes/{id}
@@ -159,8 +162,10 @@ Update an existing recipe.
 
 **Status Codes:**
 - 200: Recipe updated
-- 400: Invalid request data (invalid ID or validation errors)
+- 400: Invalid recipe ID (malformed request)
 - 404: Recipe not found
+- 422: Invalid request data (validation errors with detailed error messages)
+- 429: Rate limit exceeded (too many requests)
 - 500: Server error
 
 ### DELETE /recipes/{id}
@@ -174,8 +179,9 @@ Delete a recipe.
 
 **Status Codes:**
 - 200: Recipe deleted
-- 400: Invalid recipe ID
+- 400: Invalid recipe ID (malformed request)
 - 404: Recipe not found
+- 429: Rate limit exceeded (too many requests)
 - 500: Server error
 
 ### GET /recipe-collections
@@ -196,6 +202,7 @@ Get available recipe collections from your AnyList account.
 
 **Status Codes:**
 - 200: Collections retrieved successfully
+- 429: Rate limit exceeded (too many requests)
 - 500: Server error
 
 ### POST /meal-plan
@@ -234,7 +241,8 @@ Add a recipe to the meal planning calendar.
 
 **Status Codes:**
 - 201: Meal plan event created
-- 400: Invalid request data (with detailed error messages)
+- 422: Invalid request data (validation errors with detailed error messages)
+- 429: Rate limit exceeded (too many requests)
 - 500: Server error
 
 ## Performance Optimizations
@@ -264,10 +272,39 @@ All recipe endpoints use the same authentication and IP filtering as existing en
 ## Error Handling
 
 All endpoints return appropriate HTTP status codes and JSON error messages where applicable:
-- 400: Bad Request (missing required fields, invalid data)
+- 400: Bad Request (malformed requests, missing path parameters)
 - 403: Forbidden (IP filtering)
 - 404: Not Found (recipe doesn't exist)
+- 422: Unprocessable Entity (validation errors, semantic data issues)
+- 429: Too Many Requests (rate limiting)
 - 500: Internal Server Error (AnyList API errors, network issues)
+
+### Error Response Formats
+
+**Validation Errors (422):**
+```json
+{
+  "errors": [
+    "Recipe name is required and must be a non-empty string",
+    "Cook time must be a non-negative integer"
+  ]
+}
+```
+
+**Single Error Messages (400, 404):**
+```json
+{
+  "error": "Recipe ID is required and must be a non-empty string"
+}
+```
+
+**Rate Limiting (429):**
+```json
+{
+  "error": "Rate limit exceeded. Please try again later.",
+  "retryAfter": 60
+}
+```
 
 ## Example Usage
 
