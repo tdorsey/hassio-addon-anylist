@@ -19,7 +19,7 @@ function getSecret(secretName, envName) {
 }
 
 const PORT = args["port"] || process.env.PORT || 8080;
-const EMAIL = getSecret('anylist_email', 'EMAIL');
+const EMAIL = args["email"] || process.env.EMAIL;
 const PASSWORD = getSecret('anylist_password', 'PASSWORD');
 const IP_FILTER = args["ip-filter"] || process.env.IP_FILTER;
 const DEFAULT_LIST = args["default-list"] || process.env.DEFAULT_LIST;

@@ -20,32 +20,25 @@ function getSecret(secretName, envName) {
 describe('Docker Compose Secrets Support', () => {
     beforeEach(() => {
         // Clean up environment variables
-        delete process.env.EMAIL;
         delete process.env.PASSWORD;
     });
 
     afterEach(() => {
         // Clean up environment variables
-        delete process.env.EMAIL;
         delete process.env.PASSWORD;
     });
 
     test('should fall back to environment variable when secret file does not exist', () => {
-        process.env.EMAIL = 'test@example.com';
         process.env.PASSWORD = 'testpassword';
         
-        const email = getSecret('anylist_email', 'EMAIL');
         const password = getSecret('anylist_password', 'PASSWORD');
         
-        expect(email).toBe('test@example.com');
         expect(password).toBe('testpassword');
     });
 
     test('should return undefined when neither secret file nor environment variable exists', () => {
-        const email = getSecret('anylist_email', 'EMAIL');
         const password = getSecret('anylist_password', 'PASSWORD');
         
-        expect(email).toBeUndefined();
         expect(password).toBeUndefined();
     });
 

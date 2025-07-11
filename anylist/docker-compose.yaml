@@ -4,8 +4,9 @@ services:
     container_name: anylist
     env_file:
       - .env
+    environment:
+      # EMAIL: <Anylist account email>
     secrets:
-      - anylist_email
       - anylist_password
     volumes:
       - anylist-data:/data
@@ -14,8 +15,6 @@ services:
     restart: unless-stopped
 
 secrets:
-  anylist_email:
-    environment: "EMAIL"
   anylist_password:
     environment: "PASSWORD"
 
