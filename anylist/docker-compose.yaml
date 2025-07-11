@@ -1,6 +1,7 @@
 services:
   anylist:
-    image: tdorsey/anylist:latest
+    build:
+      context: .
     container_name: anylist
     env_file:
       - .env
