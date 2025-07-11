@@ -1,12 +1,26 @@
 const AnyList = require("anylist");
 const express = require("express");
 const minimist = require("minimist");
+const fs = require("fs");
 
 const args = minimist(process.argv.slice(2));
 
+// Helper function to read secret from file or environment variable
+function getSecret(secretName, envName) {
+    const secretPath = `/run/secrets/${secretName}`;
+    try {
+        if (fs.existsSync(secretPath)) {
+            return fs.readFileSync(secretPath, 'utf8').trim();
+        }
+    } catch (err) {
+        // Fall back to environment variable if secret file doesn't exist or can't be read
+    }
+    return args[envName.toLowerCase().replace('_', '-')] || process.env[envName];
+}
+
 const PORT = args["port"] || process.env.PORT || 8080;
 const EMAIL = args["email"] || process.env.EMAIL;
-const PASSWORD = args["password"] || process.env.PASSWORD;
+const PASSWORD = getSecret('anylist_password', 'PASSWORD');
 const IP_FILTER = args["ip-filter"] || process.env.IP_FILTER;
 const DEFAULT_LIST = args["default-list"] || process.env.DEFAULT_LIST;
 const CREDENTIALS_FILE = args["credentials-file"] || process.env.CREDENTIALS_FILE;
