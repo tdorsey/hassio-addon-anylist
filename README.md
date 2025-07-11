@@ -17,7 +17,7 @@ To install the addon, you have to first add this repository to your Home Assista
 
 
 ### Docker Container
-The addon is also available as a docker image. If you prefer to use docker compose, download and import [docker-compose.yaml](https://github.com/kevdliu/hassio-addon-anylist/blob/main/anylist/docker-compose.yaml) from the repository. Otherwise, you can also run the container by executing the docker command inside [run-docker.txt](https://github.com/kevdliu/hassio-addon-anylist/blob/main/anylist/run-docker.txt) from the repository. 
+The addon is also available as a docker image. If you prefer to use docker compose, download and import [docker-compose.yaml](https://github.com/tdorsey/hassio-addon-anylist/blob/main/anylist/docker-compose.yaml) from the repository. Otherwise, you can also run the container by executing the docker command inside [run-docker.txt](https://github.com/tdorsey/hassio-addon-anylist/blob/main/anylist/run-docker.txt) from the repository. 
 In both cases, please make sure to replace the placeholder envrionment variables with your actual values. 
 
 

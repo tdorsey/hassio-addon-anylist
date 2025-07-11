@@ -2,7 +2,7 @@
     "name": "anylist",
     "version": "1.0.0",
     "description": "Anylist",
-    "author": "kevdliu",
+    "author": "tdorsey",
     "main": "index.js",
     "dependencies": {
         "anylist": "0.8.5",
