@@ -2,7 +2,6 @@ services:
   anylist:
     build:
       context: .
-      dockerfile: Dockerfile-generic
     container_name: anylist
     env_file:
       - .env
